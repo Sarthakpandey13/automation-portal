@@ -183,7 +183,9 @@ class DBManager {
                 )
             `);
         } catch (err) {
-            console.warn('MySQL Connection failed, falling back to JSON storage:', err.message);
+            console.error(`❌ MySQL Connection Error: ${err.message}`);
+            console.error(`   Attempted with: Host=${config.DB_HOST}, User=${config.DB_USER}, DB=${config.DB_NAME}`);
+            console.warn('⚠️ Falling back to JSON storage (db.json)');
             this.isMySQL = false;
             this.loadJSON();
         }
