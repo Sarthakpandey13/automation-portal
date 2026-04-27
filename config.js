@@ -1,8 +1,16 @@
-require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+const envPath = path.join(__dirname, '.env');
+require('dotenv').config({ path: envPath });
 
-// Debug: Check if variables are loading (hidden in production usually, but helpful now)
+console.log(`[Config] Loading .env from: ${envPath}`);
+if (!fs.existsSync(envPath)) {
+    console.error(`❌ CRITICAL: .env file NOT FOUND at ${envPath}`);
+}
+
+// Debug: Check if variables are loading
 if (!process.env.DB_NAME) {
-    console.warn('⚠️ WARNING: DB_NAME not found in environment variables. Check your .env file.');
+    console.warn('⚠️ WARNING: DB_NAME not found in environment variables.');
 }
 
 module.exports = {

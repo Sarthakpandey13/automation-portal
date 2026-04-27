@@ -89,8 +89,8 @@ async function runAutomation() {
     
     log(`[${new Date().toLocaleTimeString()}] Launching browser (CLEAN SESSION MODE)...`);
     const browser = await chromium.launch({
-        headless: false,
-        args: ['--start-maximized', '--disable-blink-features=AutomationControlled']
+        headless: true,
+        args: ['--start-maximized', '--disable-blink-features=AutomationControlled', '--no-sandbox']
     });
     const browserContext = await browser.newContext({
         viewport: null
