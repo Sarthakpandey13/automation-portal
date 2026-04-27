@@ -18,7 +18,15 @@ module.exports = {
     DB_USER: process.env.DB_USER,
     DB_PASS: process.env.DB_PASS || '', // Ensure empty string instead of undefined
     DB_NAME: process.env.DB_NAME,
-    HEADLESS: process.env.HEADLESS === 'false' ? false : true, // Default to true
+    HEADLESS: (function() {
+        const val = String(process.env.HEADLESS || '').toLowerCase();
+        if (val === 'false') return false;
+        if (val === 'true') return true;
+        if (process.platform === 'linux') return true; // Force true on linux servers by default
+        return true; // Default for everyone else
+    })(),
     VAHAN_USER: process.env.VAHAN_USER || 'digitalauto',
     VAHAN_PASS: process.env.VAHAN_PASS || 'Rajesthan@2025'
 };
+
+console.log(`[Config] FINAL HEADLESS MODE: ${module.exports.HEADLESS} (Env was: "${process.env.HEADLESS}")`);
