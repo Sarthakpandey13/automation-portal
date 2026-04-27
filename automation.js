@@ -87,7 +87,7 @@ async function runAutomation() {
     startTime = Date.now();
     await db.init();
     
-    log(`[${new Date().toLocaleTimeString()}] Launching browser (CLEAN SESSION MODE)...`);
+    log(`[${new Date().toLocaleTimeString()}] Launching browser (HEADLESS: ${config.HEADLESS})...`);
     const browser = await chromium.launch({
         headless: config.HEADLESS,
         args: ['--start-maximized', '--disable-blink-features=AutomationControlled', '--no-sandbox']
