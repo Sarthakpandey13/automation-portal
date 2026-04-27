@@ -16,7 +16,7 @@ if (!process.env.DB_NAME) {
 module.exports = {
     DB_HOST: process.env.DB_HOST || 'localhost',
     DB_USER: process.env.DB_USER,
-    DB_PASS: process.env.DB_PASS || '', // Ensure empty string instead of undefined
+    DB_PASS: process.env.DB_PASS || process.env.DB_PASSWORD || '', 
     DB_NAME: process.env.DB_NAME,
     HEADLESS: (function() {
         const val = String(process.env.HEADLESS || '').toLowerCase();
