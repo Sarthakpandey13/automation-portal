@@ -14,6 +14,15 @@ class DBManager {
 
     async init() {
         try {
+            // First connect without database to ensure it exists
+            const initConn = await mysql.createConnection({
+                host: config.DB_HOST,
+                user: config.DB_USER,
+                password: config.DB_PASS
+            });
+            await initConn.query(`CREATE DATABASE IF NOT EXISTS \`${config.DB_NAME}\``);
+            await initConn.end();
+
             this.connection = await mysql.createConnection({
                 host: config.DB_HOST,
                 user: config.DB_USER,
@@ -21,7 +30,7 @@ class DBManager {
                 database: config.DB_NAME
             });
             this.isMySQL = true;
-            console.log('Connected to MySQL');
+            console.log(`Connected to MySQL database: ${config.DB_NAME}`);
 
             // CREATE TABLES IF NOT EXISTS
             await this.connection.execute(`
