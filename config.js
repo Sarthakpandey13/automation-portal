@@ -18,6 +18,7 @@ module.exports = {
     DB_USER: process.env.DB_USER,
     DB_PASS: process.env.DB_PASS || '', // Ensure empty string instead of undefined
     DB_NAME: process.env.DB_NAME,
+    HEADLESS: process.env.HEADLESS === 'false' ? false : true, // Default to true
     VAHAN_USER: process.env.VAHAN_USER || 'digitalauto',
     VAHAN_PASS: process.env.VAHAN_PASS || 'Rajesthan@2025'
 };
