@@ -1,0 +1,10 @@
+{
+    "tabs": [
+        "Owner Details",
+        "Vehicle Details",
+        "Vehicle History Details"
+    ],
+    "delay_between_vehicles_ms": 5000,
+    "human_delay_min_ms": 2500,
+    "human_delay_max_ms": 5000
+}

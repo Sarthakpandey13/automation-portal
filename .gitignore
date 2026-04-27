@@ -1,0 +1,6 @@
+node_modules/
+.env
+vahan_session/
+uploads/
+*.log
+.DS_Store

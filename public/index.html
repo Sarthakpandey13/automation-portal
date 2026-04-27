@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vahan Automation Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-color: #38bdf8;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --success: #10b981;
+            --pending: #f59e0b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--accent-color);
+            margin: 0;
+        }
+
+        .btn {
+            background-color: var(--accent-color);
+            color: var(--bg-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        input {
+            flex: 1;
+            background: #334155;
+            border: 1px solid #475569;
+            padding: 12px;
+            border-radius: 6px;
+            color: white;
+            outline: none;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+
+        th {
+            background: #0f172a;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-Pending { background: rgba(245, 158, 11, 0.2); color: var(--pending); }
+        .status-Completed { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+
+        .loader {
+            display: none;
+            margin-left: 10px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid var(--accent-color);
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>VAHAN AUTO-FETCH</h1>
+            <div>
+                <a href="/json_paste.html" class="btn btn-secondary" style="text-decoration:none; margin-right:10px;">JSON Matrix</a>
+                <a href="/manual_parser.html" class="btn btn-secondary" style="text-decoration:none; margin-right:10px;">Manual Parser</a>
+                <button class="btn btn-secondary" onclick="startAutomation()">Run Scraper</button>
+            </div>
+        </header>
+
+        <div class="input-group">
+            <input type="text" id="vehicleInput" placeholder="Enter Vehicle Number (e.g., DL1CA1234)">
+            <button class="btn" onclick="addVehicle()">Add to Queue</button>
+        </div>
+
+        <div class="input-group" style="flex-direction: column; gap: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h3 style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">Bulk Upload (Excel)</h3>
+            </div>
+            
+            <div style="background: rgba(56, 189, 248, 0.1); border: 1px dashed var(--accent-color); padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 5px;">
+                <p style="margin: 0 0 10px 0; font-size: 0.85rem; color: var(--text-secondary);">First time? Download our template to see how to format your vehicle list.</p>
+                <a href="/api/sample-excel" class="btn btn-secondary" style="text-decoration: none; display: inline-block; padding: 6px 15px; font-size: 0.8rem;">📥 Download Sample Sheet</a>
+            </div>
+
+            <div style="display: flex; gap: 10px; width: 100%;">
+                <input type="file" id="excelFile" accept=".xlsx, .xls" style="padding: 8px;">
+                <button class="btn" onclick="uploadExcel()">Upload & Add</button>
+            </div>
+            <div id="uploadStatus" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: -5px; display: none;"></div>
+        </div>
+
+        <table id="vehicleTable">
+            <thead>
+                <tr>
+                    <th>Vehicle No</th>
+                    <th>Owner Name</th>
+                    <th>Status</th>
+                    <th>Report</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- Data will be loaded here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal for JSON view -->
+    <div id="reportModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; overflow-y:auto; padding:20px;">
+        <div style="background:var(--card-bg); max-width:800px; margin:40px auto; padding:30px; border-radius:12px; position:relative;">
+            <button onclick="closeModal()" style="position:absolute; right:20px; top:20px; background:none; border:none; color:white; font-size:24px; cursor:pointer;">&times;</button>
+            <h2 id="modalTitle" style="color:var(--accent-color); margin-top:0;"></h2>
+            <pre id="modalContent" style="background:#0f172a; padding:20px; border-radius:8px; color:var(--success); overflow-x:auto; font-size:0.9rem; line-height:1.5;"></pre>
+        </div>
+    </div>
+
+    <script>
+        async function loadVehicles() {
+            const res = await fetch('/api/vehicles');
+            const data = await res.json();
+            const body = document.getElementById('tableBody');
+            body.innerHTML = data.map(v => `
+                <tr>
+                    <td style="font-weight:600; color:var(--accent-color)">${v.vehicle_no}</td>
+                    <td>${v.owner_name || '-'}</td>
+                    <td><span class="status status-${v.status}">${v.status}</span></td>
+                    <td>
+                        ${v.full_data ? `<button class="btn btn-secondary" style="padding:4px 10px; font-size:0.75rem;" onclick='showReport(${JSON.stringify(v)})'>View Report</button>
+                        <button class="btn btn-secondary" style="padding:4px 10px; font-size:0.75rem; margin-left:6px;" onclick="aiAudit(${v.id})">AI review</button>` : '-'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function showReport(vehicle) {
+            document.getElementById('modalTitle').innerText = `Report for ${vehicle.vehicle_no}`;
+            const fullData = JSON.parse(vehicle.full_data);
+            document.getElementById('modalContent').innerText = JSON.stringify(fullData, null, 2);
+            document.getElementById('reportModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('reportModal').style.display = 'none';
+        }
+
+        async function aiAudit(id) {
+            const res = await fetch('/api/ai-audit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                alert(data.error || 'AI review failed. Set OPENAI_API_KEY in .env and restart the server.');
+                return;
+            }
+            document.getElementById('modalTitle').innerText = `AI review — ${data.vehicle_no || id}`;
+            document.getElementById('modalContent').innerText = data.review || JSON.stringify(data, null, 2);
+            document.getElementById('reportModal').style.display = 'block';
+        }
+
+        async function addVehicle() {
+            const input = document.getElementById('vehicleInput');
+            const vehicle_no = input.value.trim().toUpperCase();
+            if (!vehicle_no) return;
+
+            await fetch('/api/vehicles', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ vehicle_no })
+            });
+
+            input.value = '';
+            loadVehicles();
+        }
+
+        async function startAutomation() {
+            const res = await fetch('/api/start-automation', { method: 'POST' });
+            const data = await res.json();
+            alert(data.message + ". A browser window will open. Please handle CAPTCHA/OTP there.");
+        }
+
+        async function uploadExcel() {
+            const fileInput = document.getElementById('excelFile');
+            const statusDiv = document.getElementById('uploadStatus');
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert('Please select an Excel file first');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            statusDiv.style.display = 'block';
+            statusDiv.innerText = 'Uploading and processing...';
+            statusDiv.style.color = 'var(--accent-color)';
+
+            try {
+                const res = await fetch('/api/upload-excel', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    statusDiv.innerText = data.message;
+                    statusDiv.style.color = 'var(--success)';
+                    fileInput.value = '';
+                    loadVehicles();
+                } else {
+                    statusDiv.innerText = 'Error: ' + data.error;
+                    statusDiv.style.color = '#ef4444';
+                }
+            } catch (err) {
+                statusDiv.innerText = 'Failed to upload: ' + err.message;
+                statusDiv.style.color = '#ef4444';
+            }
+        }
+
+        setInterval(loadVehicles, 5000);
+        loadVehicles();
+    </script>
+</body>
+</html>

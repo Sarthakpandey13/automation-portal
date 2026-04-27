@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Table Parser | Vahan Automation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #030712;
+            --card: #111827;
+            --accent: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.2);
+            --text: #f9fafb;
+            --text-muted: #9ca3af;
+            --success: #10b981;
+            --error: #ef4444;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .glass-panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(12px);
+            margin-bottom: 30px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0 0 10px 0;
+        }
+
+        .banner {
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .banner-icon { font-size: 1.5rem; }
+        .banner-text h4 { margin: 0 0 5px 0; color: var(--accent); }
+        .banner-text p { margin: 0; color: var(--text-muted); font-size: 0.9rem; line-height: 1.4; }
+
+        .input-section h3 { margin-bottom: 15px; font-weight: 500; color: var(--text-muted); }
+        
+        textarea {
+            width: 100%;
+            height: 250px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 20px;
+            color: var(--accent);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            outline: none;
+            resize: vertical;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+
+        textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px var(--accent-glow);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary { background: var(--accent); color: var(--bg); }
+        .btn-primary:hover { transform: translateY(-1px); filter: brightness(1.1); }
+        
+        .btn-secondary { background: #334155; color: white; }
+        .btn-secondary:hover { background: #475569; }
+
+        .btn-success { background: var(--success); color: white; }
+
+        /* Results Table */
+        .results-container {
+            display: none;
+            margin-top: 40px;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: #0f172a;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            text-align: left;
+            color: var(--accent);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(255, 255, 255, 0.02); color: var(--text); }
+
+        .save-controls {
+            margin-top: 30px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            background: rgba(16, 185, 129, 0.05);
+            border: 1px dashed rgba(16, 185, 129, 0.3);
+            border-radius: 16px;
+        }
+
+        .save-controls input {
+            background: #0f172a;
+            border: 1px solid #334155;
+            padding: 12px;
+            border-radius: 8px;
+            color: white;
+            outline: none;
+            width: 200px;
+        }
+
+        .status-msg {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .back-link {
+            display: block;
+            margin-top: 40px;
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="glass-panel">
+            <header>
+                <h1>Manual Parser</h1>
+                <p class="subtitle">Extract data from pasted tables into database columns</p>
+            </header>
+
+            <div class="banner">
+                <div class="banner-icon">✨</div>
+                <div class="banner-text">
+                    <h4>Auto-Detection Enabled</h4>
+                    <p>The parser will automatically detect table titles and headers. Paste your table content from any portal (Vahan, Challan, etc.) and we'll map it to columns for you.</p>
+                </div>
+            </div>
+
+            <div class="input-section">
+                <h3>Paste Table Content:</h3>
+                <textarea id="tableInput" placeholder="Paste your table here (tab-separated or space-aligned)...&#10;&#10;Example:&#10;ID    REGISTRATION NO    INSURANCE COMPANY&#10;129   DL1CA1234          THE NEW INDIA ASSURANCE&#10;130   DL1CA1235          HDFC ERGO"></textarea>
+                
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="parseTable()">Parse Table</button>
+                    <button class="btn btn-secondary" onclick="clearAll()">Clear</button>
+                </div>
+            </div>
+
+            <div id="results" class="results-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 id="parsedTitle" style="margin: 0; color: var(--accent);">Parsed Results</h2>
+                    <span id="rowCount" style="color: var(--text-muted); font-size: 0.9rem;"></span>
+                </div>
+
+                <div class="table-wrapper">
+                    <table id="dataTable">
+                        <thead id="tableHead"></thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="save-controls">
+                    <div style="flex: 1;">
+                        <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px;">Vehicle Number (Required)</label>
+                        <input type="text" id="regNoInput" placeholder="e.g. DL1CA1234">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px;">Section Name</label>
+                        <input type="text" id="sectionInput" placeholder="e.g. historyOfInsurance">
+                    </div>
+                    <button class="btn btn-success" onclick="saveToDb()">Save to Database</button>
+                </div>
+            </div>
+
+            <div id="status" class="status-msg"></div>
+        </div>
+        
+        <a href="/" class="back-link">← Back to Dashboard</a>
+    </div>
+
+    <script>
+        let lastParsedData = null;
+
+        function clearAll() {
+            document.getElementById('tableInput').value = '';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('status').style.display = 'none';
+            lastParsedData = null;
+        }
+
+        function parseTable() {
+            const text = document.getElementById('tableInput').value.trim();
+            if (!text) return;
+
+            // Simple parsing logic (MVP for immediate feedback)
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            if (lines.length < 2) return;
+
+            // Detect delimiter
+            const hasTabs = lines.some(l => l.includes('\t'));
+            const splitFn = hasTabs ? (l) => l.split('\t') : (l) => l.split(/\s{2,}/);
+
+            const headers = splitFn(lines[0]).map(h => h.trim() || 'Column');
+            const dataRows = lines.slice(1).map(line => {
+                const parts = splitFn(line);
+                const row = {};
+                headers.forEach((h, i) => {
+                    row[h] = (parts[i] || '').trim();
+                });
+                return row;
+            });
+
+            renderTable(headers, dataRows);
+            
+            // Try to auto-detect Reg No
+            const regKey = headers.find(h => /reg|vehicle/i.test(h));
+            if (regKey && dataRows[0][regKey]) {
+                document.getElementById('regNoInput').value = dataRows[0][regKey].toUpperCase();
+            }
+
+            lastParsedData = { headers, data: dataRows };
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('rowCount').innerText = `${dataRows.length} rows detected`;
+        }
+
+        function renderTable(headers, rows) {
+            const head = document.getElementById('tableHead');
+            const body = document.getElementById('tableBody');
+
+            head.innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+            body.innerHTML = rows.map(row => `
+                <tr>${headers.map(h => `<td>${row[h] || '-'}</td>`).join('')}</tr>
+            `).join('');
+        }
+
+        async function saveToDb() {
+            const regNo = document.getElementById('regNoInput').value.trim().toUpperCase();
+            const section = document.getElementById('sectionInput').value.trim() || 'Manual_Import';
+            
+            if (!regNo) {
+                alert('Vehicle Number is required');
+                return;
+            }
+
+            const status = document.getElementById('status');
+            status.style.display = 'block';
+            status.innerText = 'Saving...';
+            status.style.background = 'rgba(255,255,255,0.05)';
+
+            try {
+                // We send the parsed data to our JSON save endpoint
+                const payload = {
+                    registrationNo: regNo,
+                    [section]: lastParsedData.data
+                };
+
+                const res = await fetch('/api/save-json', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await res.json();
+                if (res.ok) {
+                    status.innerText = '✓ Saved successfully to database!';
+                    status.style.background = 'rgba(16, 185, 129, 0.1)';
+                    status.style.color = '#10b981';
+                } else {
+                    throw new Error(result.message || 'Save failed');
+                }
+            } catch (err) {
+                status.innerText = '✕ Error: ' + err.message;
+                status.style.background = 'rgba(239, 68, 68, 0.1)';
+                status.style.color = '#ef4444';
+            }
+        }
+    </script>
+</body>
+</html>

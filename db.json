@@ -1,0 +1,11 @@
+{
+  "vehicles": [
+    {
+      "id": 1,
+      "vehicle_no": "RJ01ST1997",
+      "status": "Pending",
+      "owner_name": null,
+      "insurance_upto": null
+    }
+  ]
+}
