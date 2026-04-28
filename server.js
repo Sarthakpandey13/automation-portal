@@ -175,10 +175,24 @@ app.post('/api/browser-input', (req, res) => {
 });
 
 
+app.post('/api/save-manual-data', async (req, res) => {
+    try {
+        const { vehicle_no, data } = req.body;
+        if (!vehicle_no) return res.status(400).json({ error: 'No vehicle number' });
+        
+        // Save the raw data into the DB
+        await db.updateVehicleByNumber(vehicle_no, {
+            status: 'Completed',
+            full_data: JSON.stringify(data),
+            last_updated: new Date()
+        });
+        
+        res.json({ success: true, message: `Vehicle ${vehicle_no} saved successfully!` });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
 
-
-/** POST /api/upload-excel — Process uploaded Excel file. */
-app.post('/api/upload-excel', upload.single('file'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }

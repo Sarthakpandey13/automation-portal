@@ -283,6 +283,25 @@ class DBManager {
         }
     }
 
+    async updateVehicleByNumber(vehicle_no, data) {
+        if (this.isMySQL) {
+            for (const key of Object.keys(data)) {
+                if (key === 'id') continue;
+                await this.ensureColumnExists('vehicles', key);
+            }
+            const fields = Object.keys(data).map(k => `\`${k}\` = ?`).join(', ');
+            const values = [...Object.values(data), vehicle_no];
+            await this.connection.execute(`UPDATE vehicles SET ${fields} WHERE vehicle_no = ?`, values);
+        } else {
+            const index = this.data.vehicles.findIndex(v => v.vehicle_no === vehicle_no);
+            if (index !== -1) {
+                this.data.vehicles[index] = { ...this.data.vehicles[index], ...data };
+                this.saveJSON();
+            }
+        }
+    }
+
+
     titleToTableName(title) {
         if (!title) return null;
         const t = title.toLowerCase().trim();
