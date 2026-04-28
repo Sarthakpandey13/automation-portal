@@ -172,6 +172,34 @@ async function runAutomation() {
             clearInterval(screenshotInterval);
         }
     }, 5000);
+    
+    // LISTEN FOR REMOTE INPUT FROM SERVER
+    process.stdin.on('data', async (data) => {
+        try {
+            const { text, action } = JSON.parse(data.toString());
+            if (text) {
+                log(`⌨️ Remote input received: typing "${text}"`);
+                // Find visible input (captcha or otp)
+                const inputs = await page.$$('input:visible');
+                for (const input of inputs) {
+                    const id = await input.getAttribute('id');
+                    const isUserOrPass = id && (id.includes('user_id') || id.includes('password'));
+                    const val = await input.inputValue();
+                    if (!isUserOrPass && !val) {
+                        await input.fill(text);
+                        log(`✅ Typed into field: ${id}`);
+                        break;
+                    }
+                }
+            }
+            if (action === 'login') {
+                log('🖱️ Remote action: Clicking Login/Submit');
+                await page.click('button:has-text("Login"), button:has-text("Submit"), [id*="login"], [id*="submit"]');
+            }
+        } catch (e) {
+            log(`⚠️ Remote input error: ${e.message}`);
+        }
+    });
 
     // Monitor for Session Warnings
     page.on('framenavigated', async (frame) => {

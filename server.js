@@ -164,6 +164,17 @@ app.get('/api/status', (req, res) => {
     });
 });
 
+app.post('/api/browser-input', (req, res) => {
+    const { text, action } = req.body;
+    if (automationProcess) {
+        const payload = JSON.stringify({ text, action }) + '\n';
+        automationProcess.stdin.write(payload);
+        return res.json({ status: 'sent' });
+    }
+    res.status(400).json({ error: 'Automation not running' });
+});
+
+
 
 /** POST /api/upload-excel — Process uploaded Excel file. */
 app.post('/api/upload-excel', upload.single('file'), async (req, res) => {

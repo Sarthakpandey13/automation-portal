@@ -192,9 +192,18 @@
                     </div>
                 </div>
             </div>
-            <div style="margin-top: 15px; padding: 10px; background: rgba(56, 189, 248, 0.1); border-radius: 6px; font-size: 0.8rem; color: var(--text-secondary);">
-                <strong>Note:</strong> Since this is running on a server, you can't click directly on the browser above. Use the logs to monitor if a CAPTCHA or OTP is required.
+            <div style="margin-top: 15px; padding: 15px; background: rgba(56, 189, 248, 0.1); border-radius: 6px; border: 1px solid var(--accent-color);">
+                <h3 style="font-size: 0.9rem; margin: 0 0 10px 0; color: var(--accent-color);">🎮 Remote Control (Solve CAPTCHA / OTP)</h3>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="browserInput" placeholder="Enter CAPTCHA or OTP here" style="flex: 1; padding: 8px;">
+                    <button class="btn" onclick="sendToBrowser()">Send Text</button>
+                    <button class="btn btn-secondary" onclick="sendToBrowser('login')" style="border-color: var(--success); color: var(--success);">Login / Submit</button>
+                </div>
+                <p style="margin: 10px 0 0 0; font-size: 0.75rem; color: var(--text-secondary);">
+                    <strong>How to use:</strong> Look at the screenshot above. Type the CAPTCHA you see into the box and click <strong>Send Text</strong>, then click <strong>Login / Submit</strong>.
+                </p>
             </div>
+
         </div>
 
         <table id="vehicleTable" style="margin-top: 30px;">
@@ -304,6 +313,21 @@
                 monitoringInterval = null;
             }
             alert(data.message);
+        }
+
+        async function sendToBrowser(action = null) {
+            const input = document.getElementById('browserInput');
+            const text = input.value;
+            
+            await fetch('/api/browser-input', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text, action })
+            });
+            
+            if (!action) {
+                input.value = ''; // Clear after sending text
+            }
         }
 
         let monitoringInterval = null;
