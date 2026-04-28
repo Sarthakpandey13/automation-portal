@@ -106,8 +106,18 @@ async function runAutomation() {
     log(`[${new Date().toLocaleTimeString()}] Launching browser (HEADLESS: ${config.HEADLESS})...`);
     const browser = await chromium.launch({
         headless: config.HEADLESS,
-        args: ['--start-maximized', '--disable-blink-features=AutomationControlled', '--no-sandbox']
+        args: [
+            '--start-maximized', 
+            '--disable-blink-features=AutomationControlled', 
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage', // Critical for low-memory Linux servers
+            '--disable-accelerated-2d-canvas',
+            '--disable-gpu',
+            '--no-zygote'
+        ]
     });
+
     const browserContext = await browser.newContext({
         viewport: null
     });
