@@ -16,17 +16,19 @@ if (!process.env.DB_NAME) {
 module.exports = {
     DB_HOST: process.env.DB_HOST || 'localhost',
     DB_USER: process.env.DB_USER,
-    DB_PASS: process.env.DB_PASS || process.env.DB_PASSWORD || '', 
+    DB_PASS: (process.env.DB_PASS || process.env.DB_PASSWORD || '').replace(/^["']|["']$/g, ''), // Clean quotes
     DB_NAME: process.env.DB_NAME,
+    PORT: process.env.PORT || 3010,
     HEADLESS: (function() {
         const val = String(process.env.HEADLESS || '').toLowerCase();
         if (val === 'false') return false;
         if (val === 'true') return true;
-        if (process.platform === 'linux') return true; // Force true on linux servers by default
-        return true; // Default for everyone else
+        if (process.platform === 'linux') return true;
+        return true;
     })(),
     VAHAN_USER: process.env.VAHAN_USER || 'digitalauto',
     VAHAN_PASS: process.env.VAHAN_PASS || 'Rajesthan@2025'
 };
+
 
 console.log(`[Config] FINAL HEADLESS MODE: ${module.exports.HEADLESS} (Env was: "${process.env.HEADLESS}")`);

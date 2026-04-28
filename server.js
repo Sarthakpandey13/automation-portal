@@ -237,8 +237,9 @@ app.get('/api/sample-excel', (req, res) => {
     res.send(buffer);
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3010;
 db.init().then(() => {
     app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
 });
+
 
