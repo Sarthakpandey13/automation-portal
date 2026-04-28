@@ -202,13 +202,15 @@
             </div>
             <div style="margin-top: 15px; padding: 15px; background: rgba(56, 189, 248, 0.1); border-radius: 6px; border: 1px solid var(--accent-color);">
                 <h3 style="font-size: 0.9rem; margin: 0 0 10px 0; color: var(--accent-color);">🎮 Remote Control (Solve CAPTCHA / OTP)</h3>
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" id="browserInput" placeholder="Enter CAPTCHA or OTP here" style="flex: 1; padding: 8px;">
-                    <button class="btn" onclick="sendToBrowser()">Send Text</button>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <input type="text" id="browserInput" placeholder="Enter CAPTCHA or OTP here" style="flex: 1; min-width: 200px; padding: 8px;">
+                    <button class="btn" onclick="sendToBrowser()">Type Text</button>
                     <button class="btn btn-secondary" onclick="sendToBrowser('enter')" style="border-color: #f59e0b; color: #f59e0b;">Press Enter</button>
                     <button class="btn btn-secondary" onclick="sendToBrowser('login')" style="border-color: var(--success); color: var(--success);">Login / Submit</button>
-
+                    <button class="btn btn-secondary" onclick="sendToBrowser('go_to_login')" style="border-color: #94a3b8; color: #94a3b8;">🏠 Go to Home</button>
+                    <button class="btn" onclick="sendToBrowser('start_queue')" style="background-color: var(--success); color: white; border: none; padding: 10px 20px;">🚀 Start Scraping Queue</button>
                 </div>
+
                 <p style="margin: 10px 0 0 0; font-size: 0.75rem; color: var(--text-secondary);">
                     <strong>How to use:</strong> Look at the screenshot above. Type the CAPTCHA you see into the box and click <strong>Send Text</strong>, then click <strong>Login / Submit</strong>.
                 </p>

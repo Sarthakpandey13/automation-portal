@@ -101,7 +101,9 @@ async function fillRegistrationNumber(page, vehicleNo) {
 
 async function runAutomation() {
     startTime = Date.now();
+    let isProcessingQueue = false;
     await db.init();
+
     
     log(`[${new Date().toLocaleTimeString()}] Launching browser (HEADLESS: ${config.HEADLESS})...`);
     const browser = await chromium.launch({
@@ -218,6 +220,14 @@ async function runAutomation() {
                 log(`🖱️ Remote click at: ${x}, ${y}`);
                 await page.mouse.click(x, y);
             }
+            if (action === 'go_to_login') {
+                log('🏠 Navigating to Login Page as requested...');
+                await page.goto('https://vahan.parivahan.gov.in/vahan/vahan/ui/login/login.xhtml');
+            }
+            if (action === 'start_queue') {
+                log('🚀 START COMMAND RECEIVED! Now processing vehicles...');
+                isProcessingQueue = true;
+            }
         } catch (e) {
             log(`⚠️ Remote input error: ${e.message}`);
         }
@@ -315,10 +325,16 @@ async function runAutomation() {
     }
 
         // 6. Infinite Loop to process vehicles
-        log('🚀 Starting continuous processing (waiting for Pending/Error vehicles)...');
+        log('🚀 Automation is standby. Please login manually then click "Start Scraping Queue".');
         
         while (true) {
+            if (!isProcessingQueue) {
+                await delay(2000);
+                continue;
+            }
+
             const allVehicles = await db.getAllVehicles();
+
             const vehicles = allVehicles.filter(v => v.status === 'Pending' || v.status === 'Error');
             
             if (vehicles.length > 0) {
