@@ -165,14 +165,15 @@ app.get('/api/status', (req, res) => {
 });
 
 app.post('/api/browser-input', (req, res) => {
-    const { text, action } = req.body;
+    const { text, action, x, y } = req.body;
     if (automationProcess) {
-        const payload = JSON.stringify({ text, action }) + '\n';
+        const payload = JSON.stringify({ text, action, x, y }) + '\n';
         automationProcess.stdin.write(payload);
         return res.json({ status: 'sent' });
     }
     res.status(400).json({ error: 'Automation not running' });
 });
+
 
 
 

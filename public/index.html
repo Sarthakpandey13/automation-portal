@@ -133,6 +133,11 @@
         }
 
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        @keyframes ripple {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(4); opacity: 0; }
+        }
     </style>
 </head>
 <body>
@@ -172,14 +177,17 @@
         <div id="liveViewContainer" style="display: none; margin-top: 30px; background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h2 style="font-size: 1.1rem; color: var(--accent-color); margin: 0;">🔴 Live Automation View</h2>
-                <div id="statusIndicator" style="display: flex; align-items: center; gap: 8px;">
-                    <div class="loader" style="display: block;"></div>
-                    <span style="font-size: 0.8rem; color: var(--text-secondary);">Automation Running...</span>
+                <div id="statusIndicator" style="display: flex; align-items: center; gap: 15px;">
+                    <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 0.7rem;" onclick="toggleLargeView()">Toggle Large View</button>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="loader" style="display: block;"></div>
+                        <span style="font-size: 0.8rem; color: var(--text-secondary);">Automation Running...</span>
+                    </div>
                 </div>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 300px; gap: 20px;">
-                <div style="background: #0f172a; border-radius: 8px; overflow: hidden; border: 1px solid #334155; aspect-ratio: 16/10; position: relative;">
-                    <img id="liveScreenshot" src="/live.jpg" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.style.display='none'" onload="this.style.display='block'">
+            <div id="liveGrid" style="display: grid; grid-template-columns: 1fr 300px; gap: 20px; transition: all 0.3s ease;">
+                <div id="screenshotWrapper" style="background: #0f172a; border-radius: 8px; overflow: hidden; border: 1px solid #334155; aspect-ratio: 16/10; position: relative; cursor: crosshair;">
+                    <img id="liveScreenshot" src="/live.jpg" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.style.display='none'" onload="this.style.display='block'" onclick="handleScreenshotClick(event)">
                     <div id="noScreenshotMsg" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--text-secondary); text-align: center;">
                         <p>Waiting for first screenshot...</p>
                         <p style="font-size: 0.7rem;">(This may take 5-10 seconds)</p>
@@ -315,18 +323,60 @@
             alert(data.message);
         }
 
-        async function sendToBrowser(action = null) {
+        async function sendToBrowser(action = null, extra = {}) {
             const input = document.getElementById('browserInput');
-            const text = input.value;
+            const text = input ? input.value : null;
             
             await fetch('/api/browser-input', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text, action })
+                body: JSON.stringify({ text, action, ...extra })
             });
             
-            if (!action) {
+            if (!action && input) {
                 input.value = ''; // Clear after sending text
+            }
+        }
+
+        function handleScreenshotClick(event) {
+            const img = event.target;
+            const rect = img.getBoundingClientRect();
+            
+            // Calculate relative coordinates (0 to 1)
+            const relX = (event.clientX - rect.left) / rect.width;
+            const relY = (event.clientY - rect.top) / rect.height;
+            
+            // Convert to browser resolution (1280x800 as set in automation.js)
+            const x = Math.round(relX * 1280);
+            const y = Math.round(relY * 800);
+            
+            // Show a small ripple effect where clicked
+            const ripple = document.createElement('div');
+            ripple.style.cssText = `
+                position: absolute; width: 10px; height: 10px;
+                background: rgba(255, 0, 0, 0.5); border-radius: 50%;
+                left: ${(relX * 100)}%; top: ${(relY * 100)}%;
+                transform: translate(-50%, -50%); pointer-events: none;
+                animation: ripple 0.5s ease-out forwards;
+            `;
+            document.getElementById('screenshotWrapper').appendChild(ripple);
+            setTimeout(() => ripple.remove(), 500);
+
+            sendToBrowser('click', { x, y });
+        }
+
+        let isLargeView = false;
+        function toggleLargeView() {
+            const grid = document.getElementById('liveGrid');
+            const container = document.querySelector('.container');
+            isLargeView = !isLargeView;
+            
+            if (isLargeView) {
+                grid.style.gridTemplateColumns = '1fr';
+                container.style.maxWidth = '100%';
+            } else {
+                grid.style.gridTemplateColumns = '1fr 300px';
+                container.style.maxWidth = '1000px';
             }
         }
 

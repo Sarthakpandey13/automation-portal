@@ -119,8 +119,9 @@ async function runAutomation() {
     });
 
     const browserContext = await browser.newContext({
-        viewport: null
+        viewport: { width: 1280, height: 800 }
     });
+
     const page = await browserContext.newPage();
     
     // GRACEFUL LOGOUT HANDLER
@@ -195,6 +196,10 @@ async function runAutomation() {
             if (action === 'login') {
                 log('🖱️ Remote action: Clicking Login/Submit');
                 await page.click('button:has-text("Login"), button:has-text("Submit"), [id*="login"], [id*="submit"]');
+            }
+            if (action === 'click' && typeof x === 'number' && typeof y === 'number') {
+                log(`🖱️ Remote click at: ${x}, ${y}`);
+                await page.mouse.click(x, y);
             }
         } catch (e) {
             log(`⚠️ Remote input error: ${e.message}`);
