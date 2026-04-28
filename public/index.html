@@ -205,7 +205,9 @@
                 <div style="display: flex; gap: 10px;">
                     <input type="text" id="browserInput" placeholder="Enter CAPTCHA or OTP here" style="flex: 1; padding: 8px;">
                     <button class="btn" onclick="sendToBrowser()">Send Text</button>
+                    <button class="btn btn-secondary" onclick="sendToBrowser('enter')" style="border-color: #f59e0b; color: #f59e0b;">Press Enter</button>
                     <button class="btn btn-secondary" onclick="sendToBrowser('login')" style="border-color: var(--success); color: var(--success);">Login / Submit</button>
+
                 </div>
                 <p style="margin: 10px 0 0 0; font-size: 0.75rem; color: var(--text-secondary);">
                     <strong>How to use:</strong> Look at the screenshot above. Type the CAPTCHA you see into the box and click <strong>Send Text</strong>, then click <strong>Login / Submit</strong>.

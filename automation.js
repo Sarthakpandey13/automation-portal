@@ -177,17 +177,17 @@ async function runAutomation() {
     // LISTEN FOR REMOTE INPUT FROM SERVER
     process.stdin.on('data', async (data) => {
         try {
-            const { text, action } = JSON.parse(data.toString());
+            const { text, action, x, y } = JSON.parse(data.toString());
             if (text) {
                 log(`⌨️ Remote input received: typing "${text}"`);
-                // Find visible input (captcha or otp)
                 const inputs = await page.$$('input:visible');
                 for (const input of inputs) {
                     const id = await input.getAttribute('id');
                     const isUserOrPass = id && (id.includes('user_id') || id.includes('password'));
                     const val = await input.inputValue();
                     if (!isUserOrPass && !val) {
-                        await input.fill(text);
+                        await input.click(); // Focus first
+                        await page.keyboard.type(text, { delay: 100 }); // Type like a human
                         log(`✅ Typed into field: ${id}`);
                         break;
                     }
@@ -195,7 +195,24 @@ async function runAutomation() {
             }
             if (action === 'login') {
                 log('🖱️ Remote action: Clicking Login/Submit');
-                await page.click('button:has-text("Login"), button:has-text("Submit"), [id*="login"], [id*="submit"]');
+                const selectors = [
+                    'button:has-text("Submit")', 'button:has-text("Login")', 
+                    '[id*="submit"]', '[id*="login"]', '.ui-button', 'input[type="submit"]'
+                ];
+                for (const sel of selectors) {
+                    try {
+                        const btn = page.locator(sel).visible().first();
+                        if (await btn.count() > 0) {
+                            await btn.click({ force: true, timeout: 2000 });
+                            log(`✅ Clicked button using selector: ${sel}`);
+                            break;
+                        }
+                    } catch (e) {}
+                }
+            }
+            if (action === 'enter') {
+                log('⌨️ Remote action: Pressing Enter');
+                await page.keyboard.press('Enter');
             }
             if (action === 'click' && typeof x === 'number' && typeof y === 'number') {
                 log(`🖱️ Remote click at: ${x}, ${y}`);
@@ -205,6 +222,7 @@ async function runAutomation() {
             log(`⚠️ Remote input error: ${e.message}`);
         }
     });
+
 
     // Monitor for Session Warnings
     page.on('framenavigated', async (frame) => {
