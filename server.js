@@ -15,6 +15,7 @@ app.use(express.static('public'));
 const upload = multer({ dest: 'uploads/' });
 
 let automationProcess = null;
+let automationStartTime = null;
 
 app.get('/api/vehicles', async (req, res) => {
     try {
@@ -90,27 +91,79 @@ app.get('/api/vehicle-history/:vehicleNo', async (req, res) => {
 function startAutomationInternal() {
     if (automationProcess) return false;
 
+    log(`[Server] Starting automation process...`);
+    automationStartTime = Date.now();
     automationProcess = spawn('node', ['automation.js'], {
-        cwd: __dirname
+        cwd: __dirname,
+        env: { ...process.env, DEBUG: 'pw:browser' } // Add debug info
     });
 
-    automationProcess.stdout.on('data', (data) => console.log(`[Automation]: ${data}`));
-    automationProcess.stderr.on('data', (data) => console.error(`[Automation Error]: ${data}`));
+    automationProcess.stdout.on('data', (data) => {
+        const msg = data.toString();
+        console.log(`[Automation]: ${msg}`);
+        // Optionally save last log to a file for frontend to read
+        fs.appendFileSync(path.join(__dirname, 'automation.log'), msg);
+    });
+
+    automationProcess.stderr.on('data', (data) => {
+        const msg = data.toString();
+        console.error(`[Automation Error]: ${msg}`);
+        fs.appendFileSync(path.join(__dirname, 'automation.log'), msg);
+    });
     
     automationProcess.on('close', (code) => {
         console.log(`Automation process exited with code ${code}`);
         automationProcess = null;
+        if (code !== 0) {
+            console.error(`Automation failed to start or crashed. Check automation.log`);
+        }
     });
     return true;
 }
 
+function log(msg) {
+    console.log(msg);
+    fs.appendFileSync(path.join(__dirname, 'server.log'), `[${new Date().toISOString()}] ${msg}\n`);
+}
+
 app.post('/api/start-automation', (req, res) => {
+    // Clear old logs and screenshots
+    try {
+        if (fs.existsSync(path.join(__dirname, 'public', 'live_log.txt'))) {
+            fs.writeFileSync(path.join(__dirname, 'public', 'live_log.txt'), '');
+        }
+        if (fs.existsSync(path.join(__dirname, 'automation.log'))) {
+            fs.writeFileSync(path.join(__dirname, 'automation.log'), '');
+        }
+        if (fs.existsSync(path.join(__dirname, 'public', 'live.jpg'))) {
+            fs.unlinkSync(path.join(__dirname, 'public', 'live.jpg'));
+        }
+    } catch (e) {
+        console.error('Failed to clear logs:', e);
+    }
+    
     const started = startAutomationInternal();
     if (!started) {
         return res.status(400).json({ message: 'Automation already running' });
     }
     res.json({ message: 'Automation started' });
 });
+
+app.post('/api/stop-automation', (req, res) => {
+    if (automationProcess) {
+        automationProcess.kill('SIGINT');
+        return res.json({ message: 'Stop command sent' });
+    }
+    res.status(400).json({ message: 'Automation not running' });
+});
+
+app.get('/api/status', (req, res) => {
+    res.json({ 
+        running: !!automationProcess,
+        uptime: automationProcess ? Math.floor((Date.now() - automationStartTime) / 1000) : 0
+    });
+});
+
 
 /** POST /api/upload-excel — Process uploaded Excel file. */
 app.post('/api/upload-excel', upload.single('file'), async (req, res) => {

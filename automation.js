@@ -9,7 +9,23 @@ let startTime = Date.now();
 function log(message) {
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     const time = new Date().toLocaleTimeString();
-    console.log(`[${time}] [+${elapsed}s] ${message}`);
+    const fullMsg = `[${time}] [+${elapsed}s] ${message}`;
+    console.log(fullMsg);
+    
+    // Save to a public log for frontend to see
+    try {
+        fs.appendFileSync(path.join(__dirname, 'public', 'live_log.txt'), fullMsg + '\n');
+    } catch (e) {}
+}
+
+async function takeScreenshot(page, name = 'live') {
+    try {
+        const screenshotPath = path.join(__dirname, 'public', `${name}.jpg`);
+        await page.screenshot({ path: screenshotPath, quality: 60, type: 'jpeg' });
+        // Also save a copy for history if needed, but 'live.jpg' is what the dashboard will watch
+    } catch (e) {
+        log(`⚠️ Screenshot failed: ${e.message}`);
+    }
 }
 
 // Human-like delay helper
@@ -137,6 +153,15 @@ async function runAutomation() {
             cursor.style.display = 'block';
         });
     });
+
+    // Take a screenshot every 5 seconds to update the live view
+    const screenshotInterval = setInterval(async () => {
+        if (!page.isClosed()) {
+            await takeScreenshot(page);
+        } else {
+            clearInterval(screenshotInterval);
+        }
+    }, 5000);
 
     // Monitor for Session Warnings
     page.on('framenavigated', async (frame) => {

@@ -142,7 +142,8 @@
             <div>
                 <a href="/json_paste.html" class="btn btn-secondary" style="text-decoration:none; margin-right:10px;">JSON Matrix</a>
                 <a href="/manual_parser.html" class="btn btn-secondary" style="text-decoration:none; margin-right:10px;">Manual Parser</a>
-                <button class="btn btn-secondary" onclick="startAutomation()">Run Scraper</button>
+                <button id="runBtn" class="btn btn-secondary" onclick="startAutomation()">Run Scraper</button>
+                <button id="stopBtn" class="btn btn-secondary" style="display:none; border-color:#ef4444; color:#ef4444;" onclick="stopAutomation()">Stop Scraper</button>
             </div>
         </header>
 
@@ -168,7 +169,35 @@
             <div id="uploadStatus" style="font-size: 0.8rem; color: var(--text-secondary); margin-top: -5px; display: none;"></div>
         </div>
 
-        <table id="vehicleTable">
+        <div id="liveViewContainer" style="display: none; margin-top: 30px; background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h2 style="font-size: 1.1rem; color: var(--accent-color); margin: 0;">🔴 Live Automation View</h2>
+                <div id="statusIndicator" style="display: flex; align-items: center; gap: 8px;">
+                    <div class="loader" style="display: block;"></div>
+                    <span style="font-size: 0.8rem; color: var(--text-secondary);">Automation Running...</span>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 300px; gap: 20px;">
+                <div style="background: #0f172a; border-radius: 8px; overflow: hidden; border: 1px solid #334155; aspect-ratio: 16/10; position: relative;">
+                    <img id="liveScreenshot" src="/live.jpg" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.style.display='none'" onload="this.style.display='block'">
+                    <div id="noScreenshotMsg" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--text-secondary); text-align: center;">
+                        <p>Waiting for first screenshot...</p>
+                        <p style="font-size: 0.7rem;">(This may take 5-10 seconds)</p>
+                    </div>
+                </div>
+                <div style="background: #0f172a; border-radius: 8px; border: 1px solid #334155; padding: 10px; display: flex; flex-direction: column;">
+                    <h3 style="font-size: 0.8rem; margin: 0 0 10px 0; color: var(--text-secondary); text-transform: uppercase;">Real-time Logs</h3>
+                    <div id="liveLogs" style="flex: 1; overflow-y: auto; font-family: monospace; font-size: 0.75rem; color: #cbd5e1; line-height: 1.4;">
+                        <!-- Logs will appear here -->
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top: 15px; padding: 10px; background: rgba(56, 189, 248, 0.1); border-radius: 6px; font-size: 0.8rem; color: var(--text-secondary);">
+                <strong>Note:</strong> Since this is running on a server, you can't click directly on the browser above. Use the logs to monitor if a CAPTCHA or OTP is required.
+            </div>
+        </div>
+
+        <table id="vehicleTable" style="margin-top: 30px;">
             <thead>
                 <tr>
                     <th>Vehicle No</th>
@@ -255,8 +284,79 @@
         async function startAutomation() {
             const res = await fetch('/api/start-automation', { method: 'POST' });
             const data = await res.json();
-            alert(data.message + ". A browser window will open. Please handle CAPTCHA/OTP there.");
+            
+            document.getElementById('runBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'inline-block';
+            document.getElementById('liveViewContainer').style.display = 'block';
+            
+            startLiveMonitoring();
         }
+
+        async function stopAutomation() {
+            const res = await fetch('/api/stop-automation', { method: 'POST' });
+            const data = await res.json();
+            
+            document.getElementById('runBtn').style.display = 'inline-block';
+            document.getElementById('stopBtn').style.display = 'none';
+            
+            if (monitoringInterval) {
+                clearInterval(monitoringInterval);
+                monitoringInterval = null;
+            }
+            alert(data.message);
+        }
+
+        let monitoringInterval = null;
+        function startLiveMonitoring() {
+            if (monitoringInterval) return;
+            
+            const screenshotImg = document.getElementById('liveScreenshot');
+            const noMsg = document.getElementById('noScreenshotMsg');
+            const logsDiv = document.getElementById('liveLogs');
+
+            monitoringInterval = setInterval(async () => {
+                // Refresh screenshot by adding a timestamp to avoid caching
+                screenshotImg.src = `/live.jpg?t=${Date.now()}`;
+                
+                // Hide "waiting" message once image loads
+                if (screenshotImg.complete && screenshotImg.naturalHeight !== 0) {
+                    noMsg.style.display = 'none';
+                }
+
+                // Fetch logs
+                try {
+                    const logRes = await fetch('/live_log.txt?t=' + Date.now());
+                    if (logRes.ok) {
+                        const text = await logRes.text();
+                        // Only update if text changed to avoid jumpy scrolling
+                        if (logsDiv.innerText !== text) {
+                            logsDiv.innerText = text;
+                            logsDiv.scrollTop = logsDiv.scrollHeight;
+                        }
+                    }
+                } catch (e) {}
+            }, 3000);
+        }
+
+        async function checkAutomationStatus() {
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+                
+                if (data.running) {
+                    document.getElementById('runBtn').style.display = 'none';
+                    document.getElementById('stopBtn').style.display = 'inline-block';
+                    document.getElementById('liveViewContainer').style.display = 'block';
+                    startLiveMonitoring();
+                } else {
+                    document.getElementById('runBtn').style.display = 'inline-block';
+                    document.getElementById('stopBtn').style.display = 'none';
+                }
+            } catch (e) {}
+        }
+
+        // Poll status every 10 seconds
+        setInterval(checkAutomationStatus, 10000);
 
         async function uploadExcel() {
             const fileInput = document.getElementById('excelFile');
@@ -298,6 +398,7 @@
 
         setInterval(loadVehicles, 5000);
         loadVehicles();
+        checkAutomationStatus();
     </script>
 </body>
 </html>
